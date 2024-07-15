@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scatterplot</title>
+    <style>
+      svg {
+        background-color: rgb(216, 216, 216);
+      }
+      #tooltip {
+        position: absolute;
+        background-color: white;
+        padding: 10px;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+      d3.json(
+        "https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/cyclist-data.json"
+      )
+        .then(data => {
+          const xLabel = "Year";
+          const yLabel = "Time (Min:Sec)";
+          const title =
+            "Doping in Professional Bicycle Racing: 35 Fastest Times Up Alpe d'Huenz";
+          const height = 600;
+          const width = 800;
+          const padding = 80;
+          const radius = 5;
+          const xMax = d3.max(data, d => d.Year);
+          const yMax = d3.max(data, d => d.Seconds * 1000);
+          const xMin = d3.min(data, d => d.Year);
+          const yMin = d3.min(data, d => d.Seconds * 1000);
+          const xScale = d3
+            .scaleLinear()
+            .domain([xMin - 1, xMax + 1])
+            .range([padding, width - padding]);
+          const xAxis = d3.axisBottom(xScale).tickFormat(d3.format("d"));
+
+          const yScale = d3
+            .scaleTime()
+            .domain([new Date(yMin), new Date(yMax)])
+            .range([height - padding, padding]);
+          const yAxis = d3.axisLeft(yScale).tickFormat(d3.timeFormat("%M:%S"));
+
+          d3.select("body")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+          d3.select("body")
+            .append("div")
+            .attr("id", "tooltip")
+            .attr("visibility", "hidden");
+
+          d3.select("svg").append("g").attr("id", "legend");
+
+          const svg = d3.select("svg");
+          const tooltip = d3.select("#tooltip");
+          const legend = d3.select("#legend");
+          svg
+            .selectAll("circle")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("class", "dot")
+            .attr("r", radius)
+            .attr("data-xvalue", d => d.Year)
+            .attr("data-yvalue", d => d3.timeParse("%M:%S")(d.Time))
+            .attr("cx", d => xScale(d.Year))
+            .attr("cy", d => yScale(new Date(d.Seconds) * 1000))
+            .attr("fill", d => (!d.Doping ? "blue" : "red"))
+            .on("mouseover", (e, d) => {
+              tooltip.attr("style", "visibility: visible");
+              tooltip
+                .html(
+                  d.Name +
+                    ": " +
+                    d.Nationality +
+                    "<br>" +
+                    "Year: " +
+                    d.Year +
+                    ", " +
+                    "Time: " +
+                    d.Time +
+                    "<br>" +
+                    d.Doping
+                )
+                .attr("data-year", d.Year);
+            })
+            .on("mousemove", () => {
+              tooltip
+                .style("visibility", "visible")
+                .style("left", event.pageX + 10 + "px")
+                .style("top", event.pageY + 10 + "px")
+                .style("transform", "translate: 60px");
+            })
+            .on("mouseleave", d =>
+              tooltip.attr("style", "visibility: hidden;")
+            );
+
+          svg
+            .append("text")
+            .text(title)
+            .attr("id", "title")
+            .attr("x", width / 4 - padding)
+            .attr("y", padding / 2);
+
+          svg
+            .append("g")
+            .call(xAxis)
+            .attr("id", "x-axis")
+            .attr("transform", "translate(0," + (height - padding) + ")");
+
+          svg
+            .append("g")
+            .call(yAxis)
+            .attr("id", "y-axis")
+            .attr("transform", "translate(" + padding + ", 0)");
+
+          svg
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 20)
+            .attr("x", -300)
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Time (Seconds)");
+          svg
+            .append("text")
+            .attr("y", height - padding / 2)
+            .attr("x", width / 2)
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Year");
+
+          legend
+            .append("rect")
+            .attr("fill", "red")
+            .attr("height", 15)
+            .attr("width", 15)
+            .attr("x", width * 0.75)
+            .attr("y", height * 0.7);
+
+          legend
+            .append("rect")
+            .attr("fill", "blue")
+            .attr("height", 15)
+            .attr("width", 15)
+            .attr("x", width * 0.75)
+            .attr("y", height * 0.73);
+
+          legend
+            .append("text")
+            .text("Doping Allegations")
+            .attr("style", "font-size: .8em")
+            .attr("x", width * 0.78)
+            .attr("y", height * 0.72);
+
+          legend
+            .append("text")
+            .text("No Doping Allegations")
+            .attr("style", "font-size: .8em")
+            .attr("x", width * 0.78)
+            .attr("y", height * 0.75);
+        })
+        .catch(error => {
+          console.log("There was a problem with the request", error);
+        });
+    </script>
+    <script
+      crossorigin
+      src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+  </body>
+</html>
